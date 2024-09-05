@@ -1,2 +1,4 @@
 # Ignore Virtual Environments Paths
 .venv/
+# Ignore unwanted files
+.DS_Store

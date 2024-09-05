@@ -1,9 +1,8 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime
-from google.cloud import storage
-import requests
-import os
+from utils.upload_to_gs import upload_to_gcs
+from utils.gs_to_bigquery import load_parquet_to_bigquery
 
 
 # Define default arguments for the DAG
@@ -25,23 +24,6 @@ with DAG(
     start_date=datetime(2023, 6, 1),
     catchup=True,
 ) as dag:
-    
-    def download_file(url, local_filename):
-        response = requests.get(url)
-        response.raise_for_status()
-        with open(local_filename, 'wb') as file:
-            file.write(response.content)
-        print(f"File downloaded successfully: {local_filename}")
-
-    def upload_to_gcs(bucket_name, source_file_name, exec_date):
-            download_file(f'https://d37ci6vzurychx.cloudfront.net/trip-data/{source_file_name}_{exec_date[:7]}.parquet', f'{source_file_name}_{exec_date[:7]}.parquet')
-            storage_client = storage.Client()
-            bucket = storage_client.bucket(bucket_name)
-            blob = bucket.blob(f'NYC_TAXI/{source_file_name}_{exec_date[:7]}.parquet')
-            blob.upload_from_filename(f'{source_file_name}_{exec_date[:7]}.parquet')
-            print(f"File {source_file_name}_{exec_date[:7]}.parquet uploaded to {f'NYC_TAXI/{source_file_name}_{exec_date[:7]}.parquet'}.")
-            os.remove(f'{source_file_name}_{exec_date[:7]}.parquet')
-
     for f in file_list:
         upload_task = PythonOperator(
             task_id=f'upload_to_gcs_{f}',
@@ -52,3 +34,14 @@ with DAG(
                 'exec_date' : '{{ds}}'
             }
         )
+        load_bigquery_task = PythonOperator(
+            task_id=f'load_bigquery_{f}',
+            python_callable=load_parquet_to_bigquery,
+            op_kwargs={
+                'project_id': 'trusty-drive-434711-g9', 
+                'dataset_id': 'nyc_taxi',
+                'table_id': f,
+                'exec_date' : '{{ds}}'
+            }
+        ) 
+        upload_task >> load_bigquery_task
