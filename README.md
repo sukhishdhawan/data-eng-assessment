@@ -30,3 +30,11 @@ Data Source -  https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page
 * You can do analysis on the dataset similar to the one done in notebook file ``/analysis/Exploratory_Data_Analysis.ipynb`` in jupyter notebook.
 * Jupyter notebook can be accessed in the dataproc cluster
   ![Screenshot 2024-09-10 at 3 42 46 AM](https://github.com/user-attachments/assets/46b3a97f-bf19-4bdb-ac91-af65d60ca290)
+
+4. Similar Services in Azure to do the same tasks -
+* Google Cloud Storage (GCS) ≈ Azure Blob Storage
+* Google Composer ≈ Azure Data Factory
+* Google Dataproc ≈ Azure Synapse Analytics
+  
+We can use these similar servies in Azure to do same tasks as we did in GCP. 
+To setup Airflow in Azure follow this nice tutorial - https://www.youtube.com/watch?v=pGZ5v7OMqhM
