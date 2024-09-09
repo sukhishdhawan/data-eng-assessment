@@ -16,7 +16,7 @@ Data Source -  https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page
 
 2. Setting Up Airflow Dag - 
 
-* Now, upload all the files and subfolders in directory ``dags`` to the airflow dags folder so that the composer can pickup our dag.
+* Now, upload all the files and subfolders in directory ``dags`` to the airflow dags folder so that the composer can pickup our dag. Also change ``trusty-drive-434711-g9`` to your project_id wherever it needs to be changed in all the files.
 ![Screenshot 2024-09-10 at 3 33 10 AM](https://github.com/user-attachments/assets/efebb274-d9bd-4e18-928c-b5b431c2608e)
 
 * After the dag is picked up successfully, it should be visible something like this - 
