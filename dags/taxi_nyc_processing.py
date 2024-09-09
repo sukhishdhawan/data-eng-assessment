@@ -39,7 +39,9 @@ with DAG(
     schedule_interval=None,  # Run on demand
     start_date=datetime(2023, 6, 1),
     catchup=True,
-) as dag:    
+) as dag:
+    load_bigquery_tasks = []
+
     for f in file_list:
         upload_task = PythonOperator(
             task_id=f'upload_to_gcs_{f}',
@@ -61,6 +63,9 @@ with DAG(
             }
         ) 
 
+        load_bigquery_tasks.append(load_bigquery_task)
+        upload_task >> load_bigquery_task
+
     taxi_transform_task = DataprocSubmitJobOperator(
         task_id='taxi_transform_task',
         job=pyspark_job_config,
@@ -69,4 +74,4 @@ with DAG(
         dag=dag,
     )   
     
-    [upload_task >> load_bigquery_task] >> taxi_transform_task
+    load_bigquery_tasks >> taxi_transform_task
