@@ -1,4 +1,8 @@
 from pyspark.sql import SparkSession
+import sys
+from google.cloud import bigquery
+
+exec_date = sys.argv[1]
 
 spark = SparkSession.builder \
     .appName("MyAppName") \
@@ -59,7 +63,7 @@ location_lookup_df.createOrReplaceTempView('location_lookup')
 # creating denormalized df
 
 transformed_df = spark.sql(
-    """ 
+    f""" 
     select 
     nvl(pickup.zone , 'Unknown') pickup_zone,
     nvl(drop.zone ,'Unknown') drop_zone,
@@ -70,7 +74,8 @@ transformed_df = spark.sql(
     from fhv
     left join location_lookup pickup on pickup.LocationID = fhv.PUlocationID
     left join location_lookup drop on drop.LocationID = fhv.DOlocationID
-    
+    WHERE file_month = '{exec_date[:7]}-01'
+
     union all
     
     select 
@@ -83,6 +88,7 @@ transformed_df = spark.sql(
     from fhvhv
     left join location_lookup pickup on pickup.LocationID = fhvhv.PUlocationID
     left join location_lookup drop on drop.LocationID = fhvhv.DOlocationID
+    WHERE file_month = '{exec_date[:7]}-01'
     
     union all
     
@@ -96,6 +102,7 @@ transformed_df = spark.sql(
     from green
     left join location_lookup pickup on pickup.LocationID = green.PUlocationID
     left join location_lookup drop on drop.LocationID = green.DOlocationID
+    WHERE file_month = '{exec_date[:7]}-01'
     
     union all
     
@@ -109,20 +116,31 @@ transformed_df = spark.sql(
     from yellow
     left join location_lookup pickup on pickup.LocationID = yellow.PUlocationID
     left join location_lookup drop on drop.LocationID = yellow.DOlocationID
-    
+    WHERE file_month = '{exec_date[:7]}-01'
     
     """
 
 )
 
+# first delete from bigquery
+client = bigquery.Client(project=project_id)
 
+query = f"""
+    DELETE FROM `{project_id}.{dataset}.trip_data_consolidated`
+    WHERE file_month = '{exec_date[:7]}-01'
+    """
+query_job = client.query(query)
+query_job.result()
+print(f"Records deleted where file_month = '{exec_date[:7]}-01'")
+
+# Load records for the particular month
 transformed_df.write \
     .format("bigquery") \
     .option("table", "trusty-drive-434711-g9.nyc_taxi.trip_data_consolidated") \
     .option("partitionField", "file_month") \
     .option("clusteredFields", "trip_type") \
     .option("writeMethod", "direct") \
-    .mode("overwrite") \
+    .mode("append") \
     .save()
 
 

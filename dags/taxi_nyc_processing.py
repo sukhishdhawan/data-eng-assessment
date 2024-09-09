@@ -27,6 +27,7 @@ pyspark_job_config = {
     },
     'pyspark_job': {
         'main_python_file_uri': 'gs://us-central1-main-env-17ba29ee-bucket/dags/utils/nyc_taxi_transform.py',
+        'args': ['{{ ds }}'],
     },
 }
 
